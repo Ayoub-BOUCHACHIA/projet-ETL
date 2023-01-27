@@ -32,6 +32,7 @@ urlpatterns = [
     #Question 1.2. Pour la catégorie d’identifiant 5, quel est en moyenne le nombre de produits qu’un fabricant offre sur le marché?
     path('average/market_products_manufacturer/<int:idcat>',AverageMarketProductsManufacturer.as_view()),
     path('average/market_products_manufacturer/<int:idcat>/<int:idfab>',AverageMarketProductsManufacturer.as_view()),
+    path('average/market_products_manufacturer/',AverageMarketProductsManufacturer.as_view()),
     
     path('average/market_products_manufacturer_sold/<int:idcat>/<str:months>',AverageMarketProductsManufacturer.as_view()),
     path('average/market_products_manufacturer_sold/<int:idcat>/<int:idfab>/<str:months>',AverageMarketProductsManufacturer.as_view()),

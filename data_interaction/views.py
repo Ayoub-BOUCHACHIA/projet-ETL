@@ -63,55 +63,96 @@ class CategorieActeur(APIView):
 class AverageMarketProductsManufacturer(APIView):
     def get(self, request, format=None, *args, **kwargs):
         dict_season= {
-            "hiver" : ["6","7","8"],
-            "ete" : ["1","2","3"]
+            "ete" : ["6","7","8"],
+            "hiver" : ["1","2","3"]
         }
 
-        idcat = kwargs.get('idcat', 5)
+        idcat = kwargs.get('idcat', -1)
         idfab = kwargs.get('idfab', -1)
         months = kwargs.get('months', None)
 
         queryset = {}
-        if idfab>=0:
-            if months:
-                nb_products_with_provider_category = accordsVente.objects.filter(id_category=idcat,id_provider=idfab,date__month__in=dict_season[months]).values_list('id_product', flat=True).count()
-                nb_markets_with_category = accordsVente.objects.filter(id_category=idcat,date__month__in=dict_season[months]).values_list('id_vente', flat=True).distinct().count()
-            else:
-                nb_products_with_provider_category = accordsVente.objects.filter(id_category=idcat,id_provider=idfab).values_list('id_product', flat=True).count()
-                nb_markets_with_category = accordsVente.objects.filter(id_category=idcat).values_list('id_vente', flat=True).distinct().count()
-                
-            queryset.update({
-                "cagory_id" : idcat,
-                "provider_id" : idfab,
-                "nb_markets_with_provider_categoru" : nb_products_with_provider_category,
-                "nb_markets_with_category" : nb_markets_with_category,
-                "mean": nb_products_with_provider_category/nb_markets_with_category
-
-            })
-        else:
-            list_of_fab_with_mean = []
-            for idfab in list(accordsVente.objects.all().values_list('id_provider', flat=True).distinct()):
+        if idcat>0:
+            if idfab>0:
                 if months:
-                    nb_products_with_provider_category = accordsVente.objects.filter(id_category=idcat,id_provider=idfab).values_list('id_product', flat=True).count()
-                    nb_markets_with_category = accordsVente.objects.filter(id_category=idcat).values_list('id_vente', flat=True).distinct().count()
+                    nb_products_with_provider_category = accordsVente.objects.filter(id_category=idcat,id_provider=idfab,date__month__in=dict_season[months]).values_list('id_product', flat=True).count()
+                    nb_markets_with_category = accordsVente.objects.filter(id_category=idcat,date__month__in=dict_season[months]).values_list('id_vente', flat=True).distinct().count()
+                    queryset.update({
+                        "solde" : months
+                    })  
                 else:
                     nb_products_with_provider_category = accordsVente.objects.filter(id_category=idcat,id_provider=idfab).values_list('id_product', flat=True).count()
                     nb_markets_with_category = accordsVente.objects.filter(id_category=idcat).values_list('id_vente', flat=True).distinct().count()
 
-                if nb_products_with_provider_category:
+                queryset.update({
+                    "cagory_id" : idcat,
+                    "provider_id" : idfab,
+                    "nb_products_with_provider_category" : nb_products_with_provider_category,
+                    "nb_markets_with_category" : nb_markets_with_category,
+                    "mean": nb_products_with_provider_category/nb_markets_with_category
+
+                })
+            else:
+                list_of_fab_with_mean = []
+                queryset.update({
+                    "cagory_id" : idcat,
+                })
+                if months:
+                    list_nb_products_for_provider_category = accordsVente.objects.filter(id_category=idcat, date__month__in=dict_season[months]).values('id_provider').annotate(nombre_produit=Count('id_product') ).order_by('-nombre_produit')
+                    nb_markets_with_category = accordsVente.objects.filter(id_category=idcat,date__month__in=dict_season[months]).values_list('id_vente', flat=True).distinct().count()
+                    queryset.update({
+                        "solde" : months
+                    })  
+                else:
+                    list_nb_products_for_provider_category = accordsVente.objects.filter(id_category=idcat).values('id_provider').annotate(nombre_produit=Count('id_product') ).order_by('nombre_produit')
+                    nb_markets_with_category = accordsVente.objects.filter(id_category=idcat).values_list('id_vente', flat=True).distinct().count()
+                queryset.update({
+                    "nb_markets_for_category" : nb_markets_with_category,
+                })
+                for pv in list_nb_products_for_provider_category:
+                    print(pv)
                     list_of_fab_with_mean.append({
-                        "cagory_id" : idcat,
-                        "provider_id" : idfab,
-                        "nb_markets_with_provider_categoru" : nb_products_with_provider_category,
-                        "nb_markets_with_category" : nb_markets_with_category,
-                        "mean": nb_products_with_provider_category/nb_markets_with_category
+                        "provider_id" : pv['id_provider'],
+                        "mean": pv["nombre_produit"]/nb_markets_with_category
 
                     })
-    
+            
+                queryset.update({
+                    'list_of_providers_with_mean' : list_of_fab_with_mean
+                })
+        else:
+            list_of_fab_foreach_cat_with_mean = []
+            if months:
+                list_nb_products_for_provider_category = accordsVente.objects.filter(date__month__in=dict_season[months]).values('id_category','id_provider').annotate(nombre_produit=Count('id_product') ).order_by('-nombre_produit')
+                nb_markets_with_category = accordsVente.objects.filter(date__month__in=dict_season[months]).values('id_category').annotate(nombre_magasin=Count('id_vente',distinct=True) )
+                queryset.update({
+                    "solde" : months
+                })
+            else:
+                list_nb_products_for_provider_category = accordsVente.objects.all().values('id_category','id_provider').annotate(nombre_produit=Count('id_product') ).order_by('-nombre_produit')
+                nb_markets_with_category = accordsVente.objects.all().values('id_category').annotate(nombre_magasin=Count('id_vente',distinct=True))
+            dict_cat_mean={}
+            for ct in nb_markets_with_category:
+                dict_cat_mean[ct['id_category']] = ct['nombre_magasin']
             queryset.update({
-                'list_of_providers_with_mean' : list_of_fab_with_mean
+                "list_markets_with_count_of_category" : nb_markets_with_category,
+            })
+            for pv in list_nb_products_for_provider_category:
+                
+                list_of_fab_foreach_cat_with_mean.append({
+                    'category_id' : pv['id_category'],
+                    "provider_id" : pv['id_provider'],
+                    'nombre_produit' : pv["nombre_produit"],
+                    "mean": pv["nombre_produit"]/dict_cat_mean[pv['id_category']]
+
+                })
+        
+            queryset.update({
+                'list_of_fab_foreach_cat_with_mean' : list_of_fab_foreach_cat_with_mean
             })
         return Response(queryset)
+
+
 
 
 class Top10Markets(APIView):
