@@ -212,13 +212,12 @@ class AverageMarketProductsManufacturerInTop10Markets(APIView):
 
             list_cat_fab_with_mean_of_product=[]
             for tmp in top_10_markets_for_category:
-
-                list_of_product = (accordsVente.objects
-                            .filter(id_vente__in=top_10_markets_for_category.filter(id_category=tmp['id_category']))
-                            .values('id_vente','id_provider')
+                list_of_product_grouped_by_cat_fab = (accordsVente.objects
+                            .filter(id_vente__in=top_10_markets_for_category.values_list('id_vente').distinct())
+                            .values('id_category','id_provider')
                 )
 
-                list_of_nb_products = list_of_product.annotate(nb_products=Count('id_product' ,distinct=True))
+                list_of_nb_products = list_of_product_grouped_by_cat_fab.annotate(nb_products=Count('id_product'))
                 mean_per_market = nb_products/10
 
                 list_cat_fab_with_mean_of_product.append({
@@ -241,6 +240,9 @@ class AverageMarketProductsManufacturerInTop10Markets(APIView):
 
 class NbrProviderByMonth(APIView):
     def get(self, request, format=None, *args, **kwargs):
-        idcat = kwargs.get('idcat', 5)
-        queryset = accordsVente.objects.filter(id_category=idcat,date__month__in=['1','2','3']).values('date__month').annotate(count_provider=Count("id_provider",distinct=True)).order_by("date__month")
+        idcat = kwargs.get('idcat', -1)
+        if idcat>=0:
+            queryset = accordsVente.objects.filter(id_category=idcat,date__month__in=['1','2','3']).values('date__month').annotate(count_provider=Count("id_provider",distinct=True)).order_by("date__month")
+        else:
+            queryset = accordsVente.objects.filter(date__month__in=['1','2','3']).values('id_category','date__month',).annotate(count_provider=Count("id_provider",distinct=True)).order_by("id_category","date__month")
         return Response(queryset)

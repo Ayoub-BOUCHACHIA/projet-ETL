@@ -39,7 +39,7 @@ urlpatterns = [
     path('average/market_products_manufacturer_sold/<int:idcat>/<int:idfab>/<str:months>',AverageMarketProductsManufacturer.as_view()),
     
     #Question 1.3. Quels sont le top 10 des magasins parmi les magID enregistrés dans la base? N.B.: il faut définir formellement la notion d’être dans le top 10
-    path('top10markets/',Top10Markets.as_view()),
+    path('top10market/',Top10Markets.as_view()),
     ##Question 2.3. Idem pour la question 1.3., avec des valeurs prises pendant les soldes d’hiver et celles d’été
     path('top10markets/<str:months>',Top10Markets.as_view()),
 
