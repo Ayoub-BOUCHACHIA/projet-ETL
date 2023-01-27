@@ -41,9 +41,12 @@ urlpatterns = [
     #Question 1.3. Quels sont le top 10 des magasins parmi les magID enregistrés dans la base? N.B.: il faut définir formellement la notion d’être dans le top 10
     path('top10market/',Top10Markets.as_view()),
     ##Question 2.3. Idem pour la question 1.3., avec des valeurs prises pendant les soldes d’hiver et celles d’été
-    path('top10markets/<str:months>',Top10Markets.as_view()),
+    path('top10market/<str:months>',Top10Markets.as_view()),
+
+    path('top10markets_by_seasson',Top10Markets.as_view()),
 
     #Question 1.4 (score de santé). Pour le fabricant d’identifiant 1664, et parmi le top 10 des magasins vendant les produits de la catégorie d’identifiant 5, quel est en moyenne la part du nombre de produits qu’offre le fabricant 1664 dans l’ensemble des produits de catégorie 5 en vente dans ces magasins?
+    path('average/market_products_manufacturer_in_top10Markets/',AverageMarketProductsManufacturerInTop10Markets.as_view()),#no resolved problem
     path('average/market_products_manufacturer_in_top10Markets/<int:idfab>',AverageMarketProductsManufacturerInTop10Markets.as_view()),#no resolved problem
     path('average/market_products_manufacturer_in_top10Markets/<int:idcat>/<int:idfab>',AverageMarketProductsManufacturerInTop10Markets.as_view()),#no resolved problem
 
@@ -54,8 +57,7 @@ urlpatterns = [
     
     
     
-    
-    
+
     
     path('sync/',Synchronizer.as_view()),
 ]

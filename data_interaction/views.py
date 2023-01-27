@@ -175,12 +175,36 @@ class Top10Markets(APIView):
 
         return Response(queryset)
 
+
+class Top10Markets(APIView):
+    def get(self, request, format=None, *args, **kwargs):
+
+        dict_season = {
+            "ete" : ["6","7","8"],
+            "hiver" : ["1","2","3"]
+        }
+        queryset_ete = list((accordsVente.objects.filter(date__month__in=dict_season["ete"])
+            .values('id_vente')
+            .annotate(count_providers=Count('id_provider', distinct=True), count_categorys=Count('id_category', distinct=True))
+            .order_by("-count_providers","-count_categorys")
+        ))[:10]
+        queryset_hiver = list((accordsVente.objects.filter(date__month__in=dict_season["hiver"])
+            .values('id_vente')
+            .annotate(count_providers=Count('id_provider', distinct=True), count_categorys=Count('id_category', distinct=True))
+            .order_by("-count_providers","-count_categorys")
+        ))[:10]   
+
+        return Response({
+            "ete" : queryset_ete,
+            "hiver" : queryset_hiver
+        })
+
 class AverageMarketProductsManufacturerInTop10Markets(APIView):
     rializer_class = CategorieActeurSerializer
     def get(self, request, format=None, *args, **kwargs):
         idfab = kwargs.get('idfab', -1)
-        idcat = kwargs.get('idcat', 5)
-        if idcat>0:
+        idcat = kwargs.get('idcat', -1)
+        if idcat>0 and idfab>0:
             top_10_markets_for_category = list((accordsVente.objects
                 .filter(id_category=5)
                 .values('id_vente')
@@ -205,37 +229,27 @@ class AverageMarketProductsManufacturerInTop10Markets(APIView):
                 .annotate(count_category=Count('id_category', distinct=True))
                 .order_by("-count_category")
             )[:10]
-
-
-            accordsVente.objects.all()
-
+    
+            list_of_nb_product_grouped_by_cat_fab = (accordsVente.objects
+                        .filter(id_vente__in=list(top_10_markets_for_category.values_list('id_vente')))
+                        .values('id_category','id_provider')
+            ).annotate(nb_products=Count('id_product'))
 
             list_cat_fab_with_mean_of_product=[]
-            for tmp in top_10_markets_for_category:
-                list_of_product_grouped_by_cat_fab = (accordsVente.objects
-                            .filter(id_vente__in=top_10_markets_for_category.values_list('id_vente').distinct())
-                            .values('id_category','id_provider')
-                )
 
-                list_of_nb_products = list_of_product_grouped_by_cat_fab.annotate(nb_products=Count('id_product'))
+            for row in list_of_nb_product_grouped_by_cat_fab:
                 mean_per_market = nb_products/10
 
                 list_cat_fab_with_mean_of_product.append({
-                    "provider_id" : idfab,
-                    "category_id" : idcat,
+                    "provider_id" : row['id_provider'],
+                    "category_id" : row['id_category'],
                     "top_10_market" : top_10_markets_for_category,
-                    "numbre_of_products" : nb_products,
-                    "mean_of_products" : mean_per_market,
-                    "list_of_product" :accordsVenteEncoder().list_dict(list_of_product)
+                    "numbre_of_products" : row['nb_products'],
+                    "mean_of_products" : row['nb_products']/10,
                 })
 
             return Response({
-                "provider_id" : idfab,
-                "category_id" : idcat,
-                "top_10_market" : top_10_markets_for_category,
-                "numbre_of_products" : nb_products,
-                "mean_of_products" : mean_per_market,
-                "list_of_product" :accordsVenteEncoder().list_dict(list_of_product)
+                "list_cat_fab_with_mean_of_product" : list_cat_fab_with_mean_of_product
             })
 
 class NbrProviderByMonth(APIView):
