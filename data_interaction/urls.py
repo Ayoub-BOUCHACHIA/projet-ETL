@@ -34,6 +34,7 @@ urlpatterns = [
     path('average/market_products_manufacturer/<int:idcat>/<int:idfab>',AverageMarketProductsManufacturer.as_view()),
     path('average/market_products_manufacturer/',AverageMarketProductsManufacturer.as_view()),
     
+    path('average/market_products_manufacturer_sold/<str:months>',AverageMarketProductsManufacturer.as_view()),
     path('average/market_products_manufacturer_sold/<int:idcat>/<str:months>',AverageMarketProductsManufacturer.as_view()),
     path('average/market_products_manufacturer_sold/<int:idcat>/<int:idfab>/<str:months>',AverageMarketProductsManufacturer.as_view()),
     
