@@ -204,14 +204,15 @@ class AverageMarketProductsManufacturerInTop10Markets(APIView):
     def get(self, request, format=None, *args, **kwargs):
         idfab = kwargs.get('idfab', -1)
         idcat = kwargs.get('idcat', -1)
-        if idcat>0 and idfab>0:
+        if idcat>=0 and idfab>=0:
             top_10_markets_for_category = list((accordsVente.objects
-                .filter(id_category=5)
+                .filter(id_category=idcat)
                 .values('id_vente')
-                .annotate(count_providers=Count('id_provider', distinct=True))
-                .order_by("-count_providers").values_list('id_vente', flat=True).distinct())
+                .annotate(count_produit=Count('id_product', distinct=True))
+                .order_by("-id_product").values_list('id_vente', flat=True).distinct())
             )[:10]
-            list_of_product = accordsVente.objects.filter(id_vente__in=top_10_markets_for_category,id_provider=idfab)
+
+            list_of_product = accordsVente.objects.filter(id_vente__in=top_10_markets_for_category,id_provider=idfab,id_category=idcat)
             nb_products = list_of_product.values_list('id_product', flat=True).count()
             mean_per_market = nb_products/10
             return Response({
@@ -219,37 +220,37 @@ class AverageMarketProductsManufacturerInTop10Markets(APIView):
                 "category_id" : idcat,
                 "top_10_market" : top_10_markets_for_category,
                 "numbre_of_products" : nb_products,
-                "mean_of_products" : mean_per_market,
+                "mean_of_products_per_market" : mean_per_market,
                 "list_of_product" :accordsVenteEncoder().list_dict(list_of_product)
             })
 
         else:
-            top_10_markets_for_category = (accordsVente.objects
-                .values('id_vente')
-                .annotate(count_category=Count('id_category', distinct=True))
-                .order_by("-count_category")
-            )[:10]
-    
-            list_of_nb_product_grouped_by_cat_fab = (accordsVente.objects
-                        .filter(id_vente__in=list(top_10_markets_for_category.values_list('id_vente')))
-                        .values('id_category','id_provider')
-            ).annotate(nb_products=Count('id_product'))
+            result  = accordsVente.objects.raw("""
+            SELECT tmp3.id, diav.id_provider, tmp3.id_category, count(diav.id_product) as number_of_products  FROM (SELECT tmp2.id, tmp2.id_category, tmp2.id_vente FROM
+                (SELECT tmp.id,tmp.id_category, tmp.id_vente, tmp.count_products, ROW_NUMBER() OVER (PARTITION BY tmp.id_category ORDER BY tmp.count_products DESC) as row_number 
+                FROM (
+                        SELECT id,id_category,id_vente,count(id_product) as count_products FROM data_interaction_accordsVente 
+                        GROUP BY id_category,id_vente 
+                        ORDER BY id_category ASC, count_products DESC 
+                ) as tmp 
+                ) as tmp2 
+            WHERE tmp2.row_number <= 10) as tmp3, data_interaction_accordsVente diav where tmp3.id_category = diav.id_category and tmp3.id_vente = diav.id_vente 
+            GROUP BY diav.id_provider, tmp3.id_category;
+            """)
 
-            list_cat_fab_with_mean_of_product=[]
+            list_bl = []
 
-            for row in list_of_nb_product_grouped_by_cat_fab:
-                mean_per_market = nb_products/10
-
-                list_cat_fab_with_mean_of_product.append({
-                    "provider_id" : row['id_provider'],
-                    "category_id" : row['id_category'],
-                    "top_10_market" : top_10_markets_for_category,
-                    "numbre_of_products" : row['nb_products'],
-                    "mean_of_products" : row['nb_products']/10,
-                })
+            for row in result:
+                dis= {
+                'id_provider' : row.id_provider,
+                'id_category' : row.id_category,
+                "number_of_products": row.number_of_products,
+                "mean_of_product_per_top_10_market": row.number_of_products/10,
+                }
+                list_bl.append(dis)
 
             return Response({
-                "list_cat_fab_with_mean_of_product" : list_cat_fab_with_mean_of_product
+                "mean_of_product_for_fab_foreach_category_in_top_10_markets" : list_bl,
             })
 
 class NbrProviderByMonth(APIView):
