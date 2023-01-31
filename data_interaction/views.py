@@ -48,7 +48,9 @@ class CategorieActeur(APIView):
         idcat = kwargs.get('idcat', -1)
 
         if idcat<0:
+
             providers = accordsVente.objects.all().values('id_category').annotate(nombre_de_concurrent=Count("id_provider", distinct=True))
+        
         else:
             providers = accordsVente.objects.filter(id_category=idcat).values_list('id_provider', flat=True).distinct()
         queryset = { 
