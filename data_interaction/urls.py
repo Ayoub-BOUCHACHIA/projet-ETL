@@ -46,17 +46,16 @@ urlpatterns = [
     path('top10markets_by_seasson',Top10Markets.as_view()),
 
     #Question 1.4 (score de santé). Pour le fabricant d’identifiant 1664, et parmi le top 10 des magasins vendant les produits de la catégorie d’identifiant 5, quel est en moyenne la part du nombre de produits qu’offre le fabricant 1664 dans l’ensemble des produits de catégorie 5 en vente dans ces magasins?
-    path('average/market_products_manufacturer_in_top10Markets/',AverageMarketProductsManufacturerInTop10Markets.as_view()),#no resolved problem
+    path('average/market_products_manufacturer_in_top10Markets/',AverageMarketProductsManufacturerInTop10Markets.as_view()),
     path('average/market_products_manufacturer_in_top10Markets/<int:idcat>/<int:idfab>/',AverageMarketProductsManufacturerInTop10Markets.as_view()),#no resolved problem
 
     #Question 2.1 Pour la catégorie d’identifiant 5, combien y a t il d’acteurs sur le marché ayant un produit de cette catégorie en Janvier, en Février, et en Mars?
     path('nbrproviderbymonth/',NbrProviderByMonth.as_view()),
     path('nbrproviderbymonth/<int:idcat>',NbrProviderByMonth.as_view()),
     
+    #Question 2.4. • Idem pour la question 1.4., avec des valeurs prises une fois tous les mois du 1er Janvier 2022 jusqu’au jour du jour.
+    path('average/market_products_manufacturer_in_top10Markets_from_month_of_year/<int:year>/<int:month>',AverageMarketProductsManufacturerInTop10Markets.as_view()),
     
-    
-    
-
     
     path('sync/',Synchronizer.as_view()),
 ]

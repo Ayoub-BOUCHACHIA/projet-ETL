@@ -43,6 +43,8 @@ class GroupViewSet(viewsets.ModelViewSet):
 
 class CategorieActeur(APIView):
     def get(self, request, format=None, *args, **kwargs):
+        handle_logProduits(dataProducts.objects.last().id)
+        handle_logAccordsVente(accordsVente.objects.last().id)
         idcat = kwargs.get('idcat', -1)
 
         if idcat<0:
@@ -60,6 +62,8 @@ class CategorieActeur(APIView):
 
 class AverageMarketProductsManufacturer(APIView):
     def get(self, request, format=None, *args, **kwargs):
+        handle_logProduits(dataProducts.objects.last().id)
+        handle_logAccordsVente(accordsVente.objects.last().id)
         dict_season= {
             "ete" : ["6","7","8"],
             "hiver" : ["1","2","3"]
@@ -155,6 +159,8 @@ class AverageMarketProductsManufacturer(APIView):
 
 class Top10Markets(APIView):
     def get(self, request, format=None, *args, **kwargs):
+        handle_logProduits(dataProducts.objects.last().id)
+        handle_logAccordsVente(accordsVente.objects.last().id)
         months = kwargs.get('months', None)
         if months:
             dict_season = {
@@ -178,7 +184,8 @@ class Top10Markets(APIView):
 
 class Top10Markets(APIView):
     def get(self, request, format=None, *args, **kwargs):
-
+        handle_logProduits(dataProducts.objects.last().id)
+        handle_logAccordsVente(accordsVente.objects.last().id)
         dict_season = {
             "ete" : ["6","7","8"],
             "hiver" : ["1","2","3"]
@@ -202,6 +209,8 @@ class Top10Markets(APIView):
 class AverageMarketProductsManufacturerInTop10Markets(APIView):
     rializer_class = CategorieActeurSerializer
     def get(self, request, format=None, *args, **kwargs):
+        handle_logProduits(dataProducts.objects.last().id)
+        handle_logAccordsVente(accordsVente.objects.last().id)
         idfab = kwargs.get('idfab', -1)
         idcat = kwargs.get('idcat', -1)
         if idcat>=0 and idfab>=0:
@@ -255,6 +264,8 @@ class AverageMarketProductsManufacturerInTop10Markets(APIView):
 
 class NbrProviderByMonth(APIView):
     def get(self, request, format=None, *args, **kwargs):
+        handle_logProduits(dataProducts.objects.last().id)
+        handle_logAccordsVente(accordsVente.objects.last().id)
         idcat = kwargs.get('idcat', -1)
         if idcat>=0:
             queryset = accordsVente.objects.filter(id_category=idcat,date__month__in=['1','2','3']).values('date__month').annotate(count_provider=Count("id_provider",distinct=True)).order_by("date__month")
